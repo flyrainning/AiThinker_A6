@@ -20,12 +20,24 @@ void setup() {
 
   //Board.debug();
   Board.begin(9600);
+  //启动网络
   Board.GPRS_Start();
   
-  Board.Send_once("www.fengpiao.net","9001","start ok");
+  //1、发送一次数据:
+  Board.Send_once("www.fengpiao.net","9001","I'm Data");
+  
+  //2、发送多次数据:
+  //建立连接
+  Board.TCP("www.fengpiao.net","9001");
+  for (size_t i = 0; i < 10; i++) {
+    Board.Send("I'm Data");
+    delay(2000);
+  }
+  //关闭连接
+  Board.Close();
   
   
-  //使用透传模式：
+  //3、使用透传模式:
   //建立连接
   Board.TCP("www.fengpiao.net","9001");
   //启用心跳包，每60秒一次
@@ -33,13 +45,23 @@ void setup() {
   //开启透传
   Board.TC_Start();
 
-  for (size_t i = 0; i < 100; i++) {
+  for (size_t i = 0; i < 10; i++) {
     Board.TC_Send("I'm Data");
     delay(2000);
   }
   //退出透传模式
   Board.TC_Stop();
-
+  
+  
+  //4、发送UDP数据
+  Board.UDP("www.fengpiao.net","9001");
+  for (size_t i = 0; i < 10; i++) {
+    Board.Send("I'm Data");
+    delay(2000);
+  }
+  //关闭
+  Board.Close();
+  
 }
 
 
