@@ -2,6 +2,7 @@
 An ESP8266/Arduino library for communicating with the Ai-Thinker A6 ( A7 ) GSM module
 
 Arduino的GSM手机模块的库，适用于Ai-Thinker A6 A7 A20系列芯片，理论上也支持其他使用AT指令的设备。
+
 提供短信，通话，GPRS联网（TCP UDP TCP数据透传）等功能。
 
 ```
