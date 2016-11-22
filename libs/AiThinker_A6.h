@@ -1,7 +1,7 @@
 //
 //    FILE: AiThinker_A6.h
 //  AUTHOR: Flyrainning
-// VERSION: 0.1.0
+// VERSION: 0.1.1
 // PURPOSE: Ai-Thinker A6 A7 A20 lib for Arduino
 //     URL: http://www.fengpiao.net
 //
@@ -30,7 +30,7 @@ private:
 
 
   char buffer[100];
-  char end_c[2];
+
 
   bool debug_on=false;
 
@@ -92,7 +92,7 @@ public:
 
   该命令只能在连接服务器成功以后用
   */
-  bool heartbeat(String time="30",String send="FF00FF",String get="FF00FF");
+  bool heartbeat(String time="30",String send="FFFAAFFF",String get="FFFAAFFF");
   /*
   开启透明传输
   times表示最大尝试发送失败次数 0-5
