@@ -2,8 +2,7 @@
 
 
 AiThinker_A6::AiThinker_A6(){
-  end_c[0] = 0x1a;
-  end_c[1] = '\0';
+
 }
 AiThinker_A6::~AiThinker_A6(){
   if(BoardSerial!=NULL){
@@ -29,9 +28,7 @@ void AiThinker_A6::setup(int RX,int TX,int Power,int Reset){
   BoardSerial=new SoftwareSerial(RX,TX);
 
 }
-String AiThinker_A6::CCID(){
 
-}
 void AiThinker_A6::begin(long baudrate,bool reset){
   BoardSerial->begin(baudrate);
   power_on();
@@ -103,6 +100,7 @@ byte AiThinker_A6::waitFor(String response1, String response2, unsigned long tim
     if ((debug_on)&&(reply != "")) {
       Serial.print((millis() - entry));
       Serial.print(" ms ");
+      Serial.print("data = ");
       Serial.println(reply);
     }
   } while ((reply.indexOf(response1) + reply.indexOf(response2) == -2) && millis() - entry < timeOut );
@@ -116,6 +114,8 @@ byte AiThinker_A6::waitFor(String response1, String response2, unsigned long tim
   if (debug_on){
     Serial.print("retVal = ");
     Serial.println(retVal);
+    Serial.print("data = ");
+    Serial.println(reply);
   }
   return retVal;
 }
@@ -134,6 +134,7 @@ String AiThinker_A6::BoardRead() {
 bool AiThinker_A6::_start() {
   BoardSerial->println("AT+CREG?");
   byte hi = waitFor("1,", "5,", 1500);  // 1: registered, home network ; 5: registered, roaming
+
   while ( hi != AT_OK) {
     BoardSerial->println("AT+CREG?");
     hi = waitFor("1,", "5,", 1500);
@@ -141,7 +142,7 @@ bool AiThinker_A6::_start() {
 
   if (cmd("AT&F0", "OK", "YES", 5000, 2) == AT_OK) {   // Reset to factory settings
     if (cmd("ATE0", "OK", "YES", 5000, 2) == AT_OK) {  // disable Echo
-      if (cmd("AT+CMEE=2", "OK", "YES", 5000, 2) == AT_OK) return AT_OK;  // enable better error messages
+      if (cmd("AT+CMEE=2", "OK", "YES", 5000, 2) == AT_OK){return AT_OK;  } // enable better error messages
       else return AT_NO;
     }else return AT_NO;
   }else return AT_NO;
@@ -181,13 +182,13 @@ bool AiThinker_A6::Send(String data){
 
   // delay(500);
   // BoardSerial->print(data);
-  // BoardSerial->print(end_c);
+  // BoardSerial->print(0x1A);
   delay(600);
   return r;
 }
 bool AiThinker_A6::Close(){
   BoardSerial->print("\r\n");
-  if (cmd("AT+CIPCLOSE", "OK", "YES", 2000, 1) == AT_OK) {
+  if (cmd("AT+CIPCLOSE", "OK", "YES", 3000, 1) == AT_OK) {
       return AT_OK;
   }else return AT_NO;
 }
@@ -202,60 +203,18 @@ bool AiThinker_A6::Send_once(String host,String port,String data){
 void AiThinker_A6::at(String cmd){
   BoardSerial->println(cmd);
 }
-bool AiThinker_A6::heartbeat(String time,String send,String get){
-  if (time!="0"){
-    if (cmd("AT+CIPHCFG=0,"+time, "OK", "YES", 5000, 2) == AT_OK) {
-      if (cmd("AT+CIPHCFG=1,"+send, "OK", "YES", 5000, 2) == AT_OK) {
-        if (cmd("AT+CIPHCFG=2,"+get, "OK", "YES", 5000, 2) == AT_OK){
-          if (cmd("AT+CIPHCFG=1", "OK", "YES", 5000, 2) == AT_OK) return AT_OK;
-          else return AT_NO;
-        }else return AT_NO;
-      }else return AT_NO;
-    }else return AT_NO;
-
-  }else{
-    if (cmd("AT+CIPHCFG=0", "OK", "YES", 5000, 2) == AT_OK) return AT_OK;  //停止心跳包
-    else return AT_NO;
-
-  }
-
-}
-bool AiThinker_A6::TC_Start(String times,String delay,int max_size,int wait_timeout){
-  if (cmd("AT+CIPTCFG=0,"+times, "OK", "YES", 5000, 2) == AT_OK) {
-    if (cmd("AT+CIPTCFG=1,"+delay, "OK", "YES", 5000, 2) == AT_OK) {
-      if (cmd("AT+CIPTCFG=2,"+String(max_size), "OK", "YES", 5000, 2) == AT_OK){
-        if (cmd("AT+CIPTCFG=3,"+String(wait_timeout), "OK", "YES", 5000, 2) == AT_OK){
-          if (cmd("AT+CIPTMODE=1", "OK", "YES", 5000, 2) == AT_OK) return AT_OK;
-          else return AT_NO;
-        }else return AT_NO;
-      }else return AT_NO;
-    }else return AT_NO;
-  }else return AT_NO;
-}
-bool AiThinker_A6::TC_Stop(){
-  BoardSerial->println("+++");
-}
-bool AiThinker_A6::TC_Send(String cmd){
-  BoardSerial->print(cmd);
-}
-bool AiThinker_A6::TC_Sendln(String cmd){
-  BoardSerial->println(cmd);
-}
 
 
 
-
-
-
-//******************下方是实现完毕，但还未经过测试的功能
 bool AiThinker_A6::SendTextMessage(String Number,String msg){
   if (cmd("AT+CMGF=1", "OK", "YES", 3000, 2) == AT_OK){
     delay(100);
     if (cmd("AT+CMGS=\""+Number+"\"", ">", "YES", 5000, 2) == AT_OK){
       delay(100);
       BoardSerial->println(msg);//the content of the message
-      BoardSerial->println(end_c);//the ASCII code of the ctrl+z is 26
-      BoardSerial->println();
+
+      BoardSerial->write(0x1A);//the ASCII code of the ctrl+z is 26
+
       delay(100);
       return AT_OK;
     }else return AT_NO;
@@ -279,9 +238,59 @@ bool AiThinker_A6::Call_Number_Off(){
 
 
 
+//******************下方是实现完毕，但还未经过测试的功能
+
+bool AiThinker_A6::heartbeat(String time,String send,String get){
+  if (time!="0"){
+    if (cmd("AT+CIPHCFG=0,"+time, "OK", "YES", 5000, 2) == AT_OK) {
+      if (cmd("AT+CIPHCFG=1,"+send, "OK", "YES", 5000, 2) == AT_OK) {
+        if (cmd("AT+CIPHCFG=2,"+get, "OK", "YES", 5000, 2) == AT_OK){
+          if (cmd("AT+CIPHMODE=1", "OK", "YES", 5000, 2) == AT_OK){return AT_OK; }
+          else return AT_NO;
+        }else return AT_NO;
+      }else return AT_NO;
+    }else return AT_NO;
+
+  }else{
+    if (cmd("AT+CIPHMODE=0", "OK", "YES", 5000, 2) == AT_OK){return AT_OK; }  //停止心跳包
+    else return AT_NO;
+
+  }
+
+}
+bool AiThinker_A6::TC_Start(String times,String delay,int max_size,int wait_timeout){
+  if (cmd("AT+CIPTCFG=0,"+times, "OK", "YES", 5000, 2) == AT_OK) {
+    if (cmd("AT+CIPTCFG=1,"+delay, "OK", "YES", 5000, 2) == AT_OK) {
+      if (cmd("AT+CIPTCFG=2,"+String(max_size), "OK", "YES", 5000, 2) == AT_OK){
+        if (cmd("AT+CIPTCFG=3,"+String(wait_timeout), "OK", "YES", 5000, 2) == AT_OK){
+          if (cmd("AT+CIPTMODE=1", "OK", "YES", 5000, 2) == AT_OK){return AT_OK; }
+          else return AT_NO;
+        }else return AT_NO;
+      }else return AT_NO;
+    }else return AT_NO;
+  }else return AT_NO;
+}
+bool AiThinker_A6::TC_Stop(){
+  BoardSerial->println();
+  BoardSerial->println("+++");
+  delay(500);
+  return true;
+}
+bool AiThinker_A6::TC_Send(String cmd){
+  BoardSerial->print(cmd);
+  return true;
+}
+bool AiThinker_A6::TC_Sendln(String cmd){
+  BoardSerial->println(cmd);
+  return true;
+}
+
+
 
 //******************下方是预留的但还未真正实现完毕的功能
+String AiThinker_A6::CCID(){
 
+}
 String AiThinker_A6::NameToIP(String ServerName){
 
 }
